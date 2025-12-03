@@ -70,7 +70,7 @@ function highlight(text, query) {
     if (!query) return text;
     // 特殊文字のエスケープ処理などは簡易化しています
     const regex = new RegExp(`(${query})`, 'gi');
-    return text.replace(regex, '<span style="background:#fff3cd; font-weight:bold;">$1</span>');
+    return text.replace(regex, '<mark class="highlight-text">$1</mark>');
 }
 
 // イベントリスナー登録
