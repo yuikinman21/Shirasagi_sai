@@ -3,31 +3,67 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>白鷺祭用語集デモ</title>
+    <title>白鷺祭用語集</title>
     <link rel="stylesheet" href="style.css">
     <script src="script.js" defer></script>
 </head>
 <body>
 
-<div class="container">
-    <header>
-        <h1>白鷺祭実行委員会 用語集</h1>
-        <div class="search-box">
-            <span class="search-icon">🔍</span>
-            <input type="text" id="search-input" placeholder="用語、読み、キーワードで検索">
+<div id="view-home" class="view-container active">
+    <div class="home-content">
+        <div class="logo-area">
+            <div class="logo-icon">🦢</div>
+            <h1 class="app-title">白鷺祭<br><span class="subtitle">用語・マニュアル検索</span></h1>
         </div>
-        <div class="categories" id="category-filter">
+
+        <div class="home-search-wrapper">
+            <input type="text" id="home-input" class="search-input-lg" placeholder="何を知りたいですか？">
+            <button id="home-search-btn" class="search-btn-primary">検索</button>
+        </div>
+
+        <div class="home-categories">
+            <p class="cat-label">よく使われるカテゴリ</p>
+            <div class="cat-grid">
+                <button class="cat-card" data-cat="備品">📦 備品</button>
+                <button class="cat-card" data-cat="場所">📍 場所</button>
+                <button class="cat-card" data-cat="ルール">⚠️ ルール</button>
+                <button class="cat-card" data-cat="業務">📝 業務</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="view-search-results" class="view-container hidden">
+    <header class="result-header">
+        <button id="back-btn" class="back-btn">
+            <span class="icon">‹</span>
+        </button>
+        <div class="header-search-box">
+            <input type="text" id="result-input" placeholder="キーワード検索">
+        </div>
+    </header>
+
+    <div class="filter-bar">
+        <div class="categories-scroll">
             <div class="chip active" data-cat="all">すべて</div>
             <div class="chip" data-cat="備品">備品</div>
             <div class="chip" data-cat="場所">場所</div>
             <div class="chip" data-cat="ルール">ルール</div>
             <div class="chip" data-cat="業務">業務</div>
         </div>
-    </header>
+    </div>
 
-    <ul id="result-list">
-        </ul>
-    <div id="no-result" class="no-result">該当する用語が見つかりません</div>
+    <div class="container scrollable-content">
+        <div class="result-count-area">
+            <span id="result-count">0</span>件ヒット
+        </div>
+        <ul id="result-list">
+            </ul>
+        <div id="no-result" class="no-result">
+            <p>見つかりませんでした</p>
+            <button id="reset-search-btn">検索条件をリセット</button>
+        </div>
+    </div>
 </div>
 
 </body>
