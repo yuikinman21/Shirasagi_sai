@@ -71,23 +71,48 @@ function goToHome() {
 }
 
 
+// --- ★修正版: 描画ロジック (タグ検索対応) ---
 function renderList() {
     listContainer.innerHTML = '';
     
     const filtered = termsData.filter(item => {
-        
-        const isCatMatch = (currentCategory === 'all') || (item.tags && item.tags.includes(currentCategory));
-        
+        // 1. カテゴリ(チップ)判定
+        let isCatMatch = false;
+        if (currentCategory === 'all') {
+            isCatMatch = true;
+        } else if (item.tags && Array.isArray(item.tags)) {
+            isCatMatch = item.tags.includes(currentCategory);
+        } else if (item.category) {
+            isCatMatch = item.category === currentCategory;
+        }
+
+        // 2. キーワード判定 (ここを拡張)
         const q = currentQuery.toLowerCase().trim();
-        const isTextMatch = !q || 
-            item.term.toLowerCase().includes(q) || 
-            item.reading.includes(q) || 
-            item.keywords.toLowerCase().includes(q);
         
+        const term = item.term || '';
+        const reading = item.reading || '';
+        const keywords = item.keywords || '';
+
+        // タグ配列の中に検索ワードが含まれているかチェック
+        // (例: 入力が「企画」なら、タグ["企画部"]を持っているアイテムもヒットさせる)
+        let isTagMatch = false;
+        if (item.tags && Array.isArray(item.tags)) {
+            isTagMatch = item.tags.some(tag => tag.toLowerCase().includes(q));
+        } else if (item.category) {
+            isTagMatch = item.category.toLowerCase().includes(q);
+        }
+
+        const isTextMatch = !q || 
+            term.toLowerCase().includes(q) || 
+            reading.includes(q) || 
+            keywords.toLowerCase().includes(q) ||
+            isTagMatch; // ★ここに追加！
+            
         return isCatMatch && isTextMatch;
     });
 
-    // 件数更新
+    // ... (以下、表示処理は変更なし) ...
+    // 結果表示
     resultCountSpan.textContent = filtered.length;
 
     if (filtered.length === 0) {
@@ -95,20 +120,26 @@ function renderList() {
     } else {
         noResultMsg.style.display = 'none';
         filtered.forEach(item => {
-            // tags配列をmapして、個別のspanタグHTMLを作成し結合する
-            const tagsHtml = item.tags.map(tag => `<span class="category-badge">${tag}</span>`).join('');
+            let badgesHtml = '';
+            if (item.tags && Array.isArray(item.tags)) {
+                badgesHtml = item.tags.map(tag => `<span class="category-badge">${tag}</span>`).join('');
+            } else if (item.category) {
+                badgesHtml = `<span class="category-badge">${item.category}</span>`;
+            }
 
             const li = document.createElement('li');
             li.className = 'item';
             li.innerHTML = `
                 <div class="item-header-row">
                     <span class="term">${highlight(item.term, currentQuery)}<span class="reading">(${item.reading})</span></span>
-                    <div class="badges-wrapper">${tagsHtml}</div>
+                    <div class="badges-wrapper">${badgesHtml}</div>
                 </div>
                 <div class="description">${highlight(item.description, currentQuery)}</div>
             `;
-            // アラート表示もタグ対応
-            li.onclick = () => alert(`${item.term}\n[${item.tags.join(', ')}]\n\n${item.description}`);
+            
+            const tagsInfo = item.tags ? item.tags.join(', ') : (item.category || '');
+            li.onclick = () => alert(`${item.term}\n[${tagsInfo}]\n\n${item.description}`);
+            
             listContainer.appendChild(li);
         });
     }
