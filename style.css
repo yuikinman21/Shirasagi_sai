@@ -147,9 +147,32 @@ body {
 }
 .categories-scroll {
     display: flex;
-    flex-wrap: wrap;
+    flex-wrap: wrap; /* 折り返し可能 */
     gap: 8px;
 }
+
+/* カテゴリ: 機材・物品など (緑系) */
+.category-badge[data-tag="機材"],
+.category-badge[data-tag="物品"],
+.category-badge[data-tag="作業"],
+.category-badge[data-tag="場所"] {
+    background-color: #e8f5e9;
+    color: #2e7d32;
+}
+
+/* イベント: 新歓・本祭典 (オレンジ系) */
+.category-badge[data-tag="新歓"],
+.category-badge[data-tag="本祭典"] {
+    background-color: #fff3e0;
+    color: #ef6c00;
+}
+
+/* その他 (グレー系) */
+.category-badge[data-tag="その他"] {
+    background-color: #f5f5f5;
+    color: #616161;
+}
+
 .categories-scroll::-webkit-scrollbar { display: none; }
 
 .chip {
