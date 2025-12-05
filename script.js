@@ -4,7 +4,7 @@ document.addEventListener('DOMContentLoaded', () => {
     setupEventListeners();
 });
 
-// --- DOM要素の取得 ---
+// --- DOM要素 ---
 const viewHome = document.getElementById('view-home');
 const viewResults = document.getElementById('view-search-results');
 const homeInput = document.getElementById('home-input');
@@ -15,7 +15,7 @@ const resultCountSpan = document.getElementById('result-count');
 
 // --- データ管理 ---
 let termsData = [];
-let currentCategory = 'all';
+let selectedTags = new Set(); 
 let currentQuery = '';
 
 // --- 1. データ読み込み ---
@@ -33,10 +33,10 @@ async function init() {
     }
 }
 
-// --- 2. イベントリスナー設定 (ここを修正) ---
+// --- 2. イベントリスナー ---
 function setupEventListeners() {
     
-    // ▼ ホーム画面: 検索実行 (Enterキー)
+    // ▼ ホーム画面: 検索
     if(homeInput) {
         homeInput.addEventListener('keydown', (e) => {
             if (e.key === 'Enter' && homeInput.value.trim() !== "") {
@@ -44,8 +44,6 @@ function setupEventListeners() {
             }
         });
     }
-
-    // ▼ ホーム画面: 検索ボタン
     const homeSearchBtn = document.getElementById('home-search-btn');
     if(homeSearchBtn) {
         homeSearchBtn.addEventListener('click', () => {
@@ -55,45 +53,57 @@ function setupEventListeners() {
         });
     }
 
-    // ▼ ホーム画面: 大きなカードボタン (.cat-card)
+    // ▼ ホーム画面: カテゴリカード (クリックしたらそのタグ1つだけで検索開始)
     const homeGrid = document.querySelector('.cat-grid');
     if(homeGrid) {
         homeGrid.addEventListener('click', (e) => {
             const card = e.target.closest('.cat-card');
             if (card) {
-                goToResults("", card.dataset.cat);
+                // ホームから飛ぶ場合は、それまでの選択をリセットして、そのタグだけを選択
+                selectedTags.clear();
+                selectedTags.add(card.dataset.cat);
+                goToResults(""); // クエリなしで遷移
             }
         });
     }
 
-    // ▼ ★重要修正: すべてのタグリスト (.categories-scroll) を監視する
-    // HTML内に2箇所あるため、querySelectorAllですべて取得してループ処理します
+    // ▼ ★重要: タグの複数選択ロジック
     const allTagContainers = document.querySelectorAll('.categories-scroll');
-    
     allTagContainers.forEach(container => {
         container.addEventListener('click', (e) => {
             const chip = e.target.closest('.chip');
             if (chip) {
-                const selectedCat = chip.dataset.cat;
-                
-                // 今ホーム画面にいるなら、画面遷移が必要
+                const tag = chip.dataset.cat;
+
+                // A. 「すべて」が押された場合 -> 全解除
+                if (tag === 'all') {
+                    selectedTags.clear();
+                } 
+                // B. それ以外が押された場合 -> ON/OFF切り替え
+                else {
+                    if (selectedTags.has(tag)) {
+                        selectedTags.delete(tag); // 選択解除
+                    } else {
+                        selectedTags.add(tag);    // 選択追加
+                    }
+                }
+
+                // ホーム画面にいるなら結果画面へ移動
                 if (viewHome.classList.contains('active')) {
-                    goToResults("", selectedCat);
+                    goToResults(""); 
                 } else {
-                    // すでに検索結果画面なら、リストを更新するだけ
-                    currentCategory = selectedCat;
-                    updateCategoryChips(currentCategory);
+                    // すでに結果画面なら再描画のみ
+                    updateCategoryChips();
                     renderList();
                 }
             }
         });
     });
 
-    // ▼ 結果画面: 戻るボタン
+    // ▼ その他ボタン
     const backBtn = document.getElementById('back-btn');
     if(backBtn) backBtn.addEventListener('click', goToHome);
 
-    // ▼ 結果画面: リアルタイム検索
     if(resultInput) {
         resultInput.addEventListener('input', (e) => {
             currentQuery = e.target.value;
@@ -101,24 +111,26 @@ function setupEventListeners() {
         });
     }
 
-    // ▼ 結果画面: リセットボタン
     const resetSearchBtn = document.getElementById('reset-search-btn');
     if(resetSearchBtn) {
-        resetSearchBtn.addEventListener('click', () => goToResults("", "all"));
+        resetSearchBtn.addEventListener('click', () => {
+            selectedTags.clear();
+            goToResults("");
+        });
     }
 }
 
-// --- 3. 画面遷移関数 ---
-function goToResults(query, category = 'all') {
-    currentQuery = query;
-    currentCategory = category;
-    
-    // 入力欄を同期
-    if(resultInput) resultInput.value = query;
-    if(homeInput) homeInput.value = query;
+// --- 3. 画面遷移 ---
+function goToResults(query) {
+    // クエリがある場合は更新(空文字なら維持しない、今回は上書き)
+    if (typeof query === 'string') {
+        currentQuery = query;
+        if(resultInput) resultInput.value = query;
+        if(homeInput) homeInput.value = query;
+    }
 
-    // タグの見た目とリストを更新
-    updateCategoryChips(category);
+    // UI更新
+    updateCategoryChips();
     renderList();
 
     // 画面切り替え
@@ -133,9 +145,11 @@ function goToResults(query, category = 'all') {
 }
 
 function goToHome() {
+    // 状態リセット
     if(homeInput) homeInput.value = '';
     if(resultInput) resultInput.value = '';
-    
+    selectedTags.clear(); // ホームに戻る時は選択解除（お好みで）
+
     if(viewResults) {
         viewResults.classList.remove('active');
         viewResults.classList.add('hidden');
@@ -146,21 +160,28 @@ function goToHome() {
     }
 }
 
-// --- 4. 描画ロジック ---
+// --- 4. 描画ロジック (AND検索) ---
 function renderList() {
     if(!listContainer) return;
     listContainer.innerHTML = '';
     
     const filtered = termsData.filter(item => {
-        // A. カテゴリ判定
-        let isCatMatch = false;
-        if (currentCategory === 'all') {
-            isCatMatch = true;
-        } else if (item.tags && Array.isArray(item.tags)) {
-            isCatMatch = item.tags.includes(currentCategory);
-        } else if (item.category) {
-            isCatMatch = item.category === currentCategory;
+        // A. タグ判定 (ANDロジック: 選択されたタグを「全て」持っているか)
+        let isTagMatch = true;
+        
+        if (selectedTags.size > 0) {
+            // アイテムが持っているタグ配列を取得
+            const itemTags = item.tags || [];
+            // 選択中のタグ(selectedTags)すべてについて、itemTagsに含まれているか確認
+            // 一つでも含まれていなければ false になる
+            for (let tag of selectedTags) {
+                if (!itemTags.includes(tag)) {
+                    isTagMatch = false;
+                    break; 
+                }
+            }
         }
+        // ※selectedTagsが空(size=0)の場合は true のまま(=全件表示)
 
         // B. キーワード判定
         const q = currentQuery.toLowerCase().trim();
@@ -168,19 +189,19 @@ function renderList() {
         const reading = item.reading || '';
         const keywords = item.keywords || '';
 
-        // タグ名での検索対応
-        let isTagMatch = false;
+        // キーワードでタグ検索
+        let isKeywordInTag = false;
         if (item.tags && Array.isArray(item.tags)) {
-            isTagMatch = item.tags.some(tag => tag.toLowerCase().includes(q));
+            isKeywordInTag = item.tags.some(tag => tag.toLowerCase().includes(q));
         }
 
         const isTextMatch = !q || 
             term.toLowerCase().includes(q) || 
             reading.includes(q) || 
             keywords.toLowerCase().includes(q) ||
-            isTagMatch;
+            isKeywordInTag;
             
-        return isCatMatch && isTextMatch;
+        return isTagMatch && isTextMatch;
     });
 
     // 件数更新
@@ -196,8 +217,6 @@ function renderList() {
             let badgesHtml = '';
             if (item.tags && Array.isArray(item.tags)) {
                 badgesHtml = item.tags.map(tag => `<span class="category-badge" data-tag="${tag}">${tag}</span>`).join('');
-            } else if (item.category) {
-                badgesHtml = `<span class="category-badge" data-tag="${item.category}">${item.category}</span>`;
             }
 
             const li = document.createElement('li');
@@ -210,7 +229,7 @@ function renderList() {
                 <div class="description">${highlight(item.description, currentQuery)}</div>
             `;
             
-            const tagsInfo = item.tags ? item.tags.join(', ') : (item.category || '');
+            const tagsInfo = item.tags ? item.tags.join(', ') : '';
             li.onclick = () => alert(`${item.term}\n[${tagsInfo}]\n\n${item.description}`);
             
             listContainer.appendChild(li);
@@ -218,15 +237,28 @@ function renderList() {
     }
 }
 
-// --- ヘルパー関数 ---
-function updateCategoryChips(activeCat) {
-    // 画面内にあるすべてのチップ(.chip)に対して処理を行う
+// --- ヘルパー: チップの見た目更新 ---
+function updateCategoryChips() {
     const allChips = document.querySelectorAll('.chip');
     allChips.forEach(chip => {
-        if (chip.dataset.cat === activeCat) {
-            chip.classList.add('active');
-        } else {
-            chip.classList.remove('active');
+        const tag = chip.dataset.cat;
+        
+        // 「すべて」チップの扱い
+        if (tag === 'all') {
+            // 何も選択されていない時だけ active
+            if (selectedTags.size === 0) {
+                chip.classList.add('active');
+            } else {
+                chip.classList.remove('active');
+            }
+        } 
+        // その他のチップ
+        else {
+            if (selectedTags.has(tag)) {
+                chip.classList.add('active');
+            } else {
+                chip.classList.remove('active');
+            }
         }
     });
 }
