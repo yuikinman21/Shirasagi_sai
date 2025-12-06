@@ -15,6 +15,7 @@ const listContainer = document.getElementById('result-list');
 const noResultMsg = document.getElementById('no-result');
 const resultCountSpan = document.getElementById('result-count');
 const homeFavoritesList = document.getElementById('home-favorites-list');
+const multiSelectToggle = document.getElementById('multi-select-toggle');
 
 // モーダル関連
 const modalOverlay = document.getElementById('modal-overlay');
@@ -86,7 +87,7 @@ function setupEventListeners() {
     window.addEventListener('resize', checkTagOverflow);
 
     // タグ選択
-    const allTagContainers = document.querySelectorAll('.categories-scroll, .cat-grid');
+const allTagContainers = document.querySelectorAll('.categories-scroll, .cat-grid');
     allTagContainers.forEach(container => {
         container.addEventListener('click', (e) => {
             if (e.target.closest('.no-select')) return;
@@ -94,17 +95,44 @@ function setupEventListeners() {
             const chip = e.target.closest('.chip, .cat-card');
             if (chip) {
                 const tag = chip.dataset.cat;
+                const isHome = chip.classList.contains('cat-card');
                 
-                if (chip.classList.contains('cat-card')) {
-                    selectedTags.clear(); selectedTags.add(tag);
-                    goToResults(""); return;
+                // ホーム画面からの遷移は常に「単一選択」として扱う
+                if (isHome) {
+                    selectedTags.clear();
+                    selectedTags.add(tag);
+                    
+                    // ※親切設計: ホームから飛んだら複数選択モードをONにするかはお好みで
+                    // if(multiSelectToggle) multiSelectToggle.checked = true; 
+                    
+                    goToResults("");
+                    return;
                 }
 
+                // --- 検索結果画面でのチップ操作 ---
+                
                 if (tag === 'all') {
                     selectedTags.clear();
                 } else {
-                    if (selectedTags.has(tag)) selectedTags.delete(tag);
-                    else selectedTags.add(tag);
+                    // ★ここが変更点: スイッチの状態を確認
+                    const isMultiMode = multiSelectToggle && multiSelectToggle.checked;
+
+                    if (isMultiMode) {
+                        // [複数選択モードON] -> 既存の動作 (追加/削除)
+                        if (selectedTags.has(tag)) selectedTags.delete(tag);
+                        else selectedTags.add(tag);
+                    } else {
+                        // [複数選択モードOFF] -> 単一選択 (切り替え)
+                        // すでに選ばれているタグをもう一度押した場合は解除するか、そのままにするか
+                        // ここでは「他のタグを消して、押したタグだけにする」挙動にします
+                        if (selectedTags.has(tag) && selectedTags.size === 1) {
+                            // 既にそれだけが選ばれている状態で押したら解除（すべて表示）
+                            selectedTags.clear();
+                        } else {
+                            selectedTags.clear();
+                            selectedTags.add(tag);
+                        }
+                    }
                 }
 
                 if (viewHome.classList.contains('active')) goToResults("");
