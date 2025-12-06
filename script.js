@@ -2,6 +2,7 @@ document.addEventListener('DOMContentLoaded', () => {
     init();
     loadFavorites();
     setupEventListeners();
+    // 画面ロード時にタグのあふれチェックを実行
     checkTagOverflow();
 });
 
@@ -66,14 +67,13 @@ function setupEventListeners() {
         if(homeInput.value.trim()) goToResults(homeInput.value);
     });
 
-    // ▼▼▼ タグエリアの開閉ボタン ▼▼▼
+    // タグエリアの開閉ボタン
     const expandBtn = document.getElementById('filter-expand-btn');
     const tagContainer = document.getElementById('tag-container');
     if(expandBtn && tagContainer) {
         expandBtn.addEventListener('click', () => {
             tagContainer.classList.toggle('expanded');
             
-            // ボタンのテキスト切り替え
             const textSpan = expandBtn.querySelector('.btn-text');
             if(tagContainer.classList.contains('expanded')) {
                 textSpan.textContent = '閉じる';
@@ -82,6 +82,7 @@ function setupEventListeners() {
             }
         });
     }
+    // リサイズ時にもあふれチェック
     window.addEventListener('resize', checkTagOverflow);
 
     // タグ選択
@@ -99,8 +100,9 @@ function setupEventListeners() {
                     goToResults(""); return;
                 }
 
-                if (tag === 'all') { selectedTags.clear(); }
-                else {
+                if (tag === 'all') {
+                    selectedTags.clear();
+                } else {
                     if (selectedTags.has(tag)) selectedTags.delete(tag);
                     else selectedTags.add(tag);
                 }
@@ -152,11 +154,9 @@ function goToResults(query) {
     const tagContainer = document.getElementById('tag-container');
     if(tagContainer) {
         tagContainer.classList.remove('expanded');
-        // 遷移時にボタンのテキストとアイコンを元に戻す
+        // ボタン表記を戻す
         const expandBtn = document.getElementById('filter-expand-btn');
-        if(expandBtn) {
-            expandBtn.querySelector('.btn-text').textContent = 'タグをすべて見る';
-        }
+        if(expandBtn) expandBtn.querySelector('.btn-text').textContent = 'タグをすべて見る';
     }
     setTimeout(checkTagOverflow, 100);
     window.scrollTo(0, 0);
@@ -233,9 +233,14 @@ function checkTagOverflow() {
     const tagContainer = document.getElementById('tag-container');
     const expandBtn = document.getElementById('filter-expand-btn');
     if (!tagContainer || !expandBtn) return;
+    
+    // 一度閉じた状態で判定する
     const wasExpanded = tagContainer.classList.contains('expanded');
     tagContainer.classList.remove('expanded');
+    
+    // 1px余裕を見る
     const hasOverflow = tagContainer.scrollWidth > tagContainer.clientWidth + 1;
+    
     if (hasOverflow) {
         expandBtn.style.display = 'flex';
         if (wasExpanded) tagContainer.classList.add('expanded');

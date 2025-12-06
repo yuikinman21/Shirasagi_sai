@@ -9,6 +9,7 @@
     --bg-body: #f8f9fa;
     --white: #ffffff;
     --radius-lg: 16px;
+    --header-height: 58px; /* ヘッダーの高さを定義 */
     --shadow-card: 0 4px 20px rgba(0,0,0,0.06);
 }
 
@@ -23,12 +24,13 @@ body {
 /* --- ビュー切り替え制御 (スマートなフェード遷移) --- */
 .view-container {
     width: 100vw;
+    /* 修正: モバイルブラウザのアドレスバー対策 */
     min-height: 100vh;
+    min-height: 100dvh; 
     position: absolute;
     top: 0; left: 0;
     background: var(--bg-body);
     
-    /* 0.4秒かけて滑らかに変化 */
     transition: 
         opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1),
         transform 0.4s cubic-bezier(0.4, 0, 0.2, 1),
@@ -39,7 +41,6 @@ body {
     opacity: 0;
     visibility: hidden;
     pointer-events: none;
-    /* 画面奥へ少し沈むような動き */
     transform: scale(0.98);
 }
 
@@ -88,6 +89,8 @@ body {
 .cat-card {
     padding: 12px; background: var(--white); border: 1px solid #eee; border-radius: 12px;
     font-size: 14px; color: var(--text-main); cursor: pointer; transition: 0.2s;
+    /* button reset */
+    font-family: inherit; text-align: center;
 }
 .cat-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-card); border-color: var(--primary); }
 .cat-card[data-cat="favorites"] { background-color: #fffde7; color: #f57f17; border-color: #fff59d; font-weight: bold; }
@@ -112,7 +115,9 @@ body {
 #result-input:focus { background: white; border-color: var(--primary); }
 
 .filter-bar {
-    position: sticky; top: 58px; z-index: 105; background: var(--white);
+    position: sticky; 
+    top: var(--header-height); /* 変数を使用 */
+    z-index: 105; background: var(--white);
     padding: 8px 16px; border-bottom: 1px solid #eee; box-shadow: 0 2px 5px rgba(0,0,0,0.02);
     transition: all 0.3s ease;
 }
@@ -122,13 +127,12 @@ body {
     display: flex; flex-wrap: nowrap; overflow-x: auto; gap: 8px; padding-bottom: 4px;
     -webkit-overflow-scrolling: touch; scrollbar-width: none;
     max-height: 40px;
-    /* 高さの変化を滑らかに */
     transition: max-height 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 .categories-scroll::-webkit-scrollbar { display: none; }
 .categories-scroll.expanded { flex-wrap: wrap; overflow-x: visible; justify-content: center; max-height: 500px; }
 
-/* ▼▼▼ 開閉ボタン（アイコン回転） ▼▼▼ */
+/* ▼▼▼ 開閉ボタン（修正版：contentプロパティ削除） ▼▼▼ */
 .filter-toggle-btn {
     display: flex; justify-content: center; align-items: center; gap: 6px;
     width: 100%; margin-top: 4px; padding: 6px;
@@ -137,17 +141,19 @@ body {
 }
 .btn-icon {
     display: inline-block;
-    transition: transform 0.3s ease; /* アイコンの回転アニメーション */
+    transition: transform 0.3s ease;
 }
-/* 展開時はアイコンを180度回転 */
 .categories-scroll.expanded + .filter-toggle-btn .btn-icon {
     transform: rotate(180deg);
 }
 
+/* チップ（button対応） */
 .chip {
     padding: 6px 14px; border-radius: 6px; font-size: 13px; border: 1px solid #eee;
     background: var(--white); color: var(--text-sub); white-space: nowrap;
     cursor: pointer; transition: 0.2s; user-select: none; flex-shrink: 0;
+    /* button reset */
+    font-family: inherit; line-height: inherit; appearance: none;
 }
 .chip.active { background: var(--primary); color: white; border-color: var(--primary); box-shadow: 0 2px 6px rgba(0, 86, 179, 0.2); }
 .chip[data-cat="favorites"].active { background: #ffecb3; color: #f57f17; border-color: #ffe082; box-shadow: 0 2px 6px rgba(255, 193, 7, 0.3); }
@@ -176,7 +182,11 @@ body {
 }
 .fav-btn.active { color: #f1c40f; text-shadow: 0 2px 5px rgba(241, 196, 15, 0.4); transform: scale(1.1); }
 
-.item-header-row { display: flex; flex-direction: column; align-items: flex-start; justify-content: flex-start; gap: 8px; margin-bottom: 8px; padding-right: 40px; }
+/* ヘッダーレイアウト（縦並びで左揃え） */
+.item-header-row {
+    display: flex; flex-direction: column; align-items: flex-start; justify-content: flex-start;
+    gap: 8px; margin-bottom: 8px; padding-right: 40px; /* 星と被らない余白 */
+}
 .term { font-size: 17px; font-weight: bold; color: var(--text-main); width: 100%; line-height: 1.4; }
 .reading { font-size: 11px; color: var(--text-sub); margin-left: 6px; font-weight: normal;}
 .category-badge {
@@ -231,6 +241,7 @@ body {
 .form-group label { font-size: 13px; font-weight: bold; color: var(--text-main); }
 .form-group select, .form-group textarea {
     padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; background: #f9f9f9; outline: none;
+    font-family: inherit;
 }
 .form-group select:focus, .form-group textarea:focus { border-color: var(--primary); background: #fff; }
 .submit-btn {
