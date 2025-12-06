@@ -100,11 +100,7 @@ const allTagContainers = document.querySelectorAll('.categories-scroll, .cat-gri
                 // ホーム画面からの遷移は常に「単一選択」として扱う
                 if (isHome) {
                     selectedTags.clear();
-                    selectedTags.add(tag);
-                    
-                    // ※親切設計: ホームから飛んだら複数選択モードをONにするかはお好みで
-                    // if(multiSelectToggle) multiSelectToggle.checked = true; 
-                    
+                    selectedTags.add(tag);                    
                     goToResults("");
                     return;
                 }
