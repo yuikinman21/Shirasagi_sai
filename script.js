@@ -133,7 +133,7 @@ function setupEventListeners() {
             const detail = document.getElementById('contact-detail').value;
             const subject = encodeURIComponent(`【白鷺祭用語集】${type}`);
             const body = encodeURIComponent(`種別: ${type}\n\n詳細:\n${detail}\n\n----------------\n送信日: ${new Date().toLocaleDateString()}`);
-            window.location.href = `mailto:info@shirasagisai.com?subject=${subject}&body=${body}`;
+            window.location.href = `mailto:sw23263n@st.omu.ac.jp?subject=${subject}&body=${body}`;
         });
     }
 }
